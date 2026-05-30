@@ -1,13 +1,78 @@
-import {Link} from 'react-router-dom'
+import { useState } from 'react';
+import {Link, useNavigate} from 'react-router-dom'
 import './SignIn.css';
 
 const TruthLensSignIn = () => {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // --- Client-side validation ---
+    if (!formData.email || !formData.password) {
+      setError('Please provide email and password.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Login failed. Please try again.');
+        return;
+      }
+
+      // Login successful — store token and user data
+      localStorage.setItem('token', data.data.token);
+      localStorage.setItem('user', JSON.stringify({
+        _id: data.data._id,
+        name: data.data.name,
+        email: data.data.email
+      }));
+
+      // Redirect to the main app page
+      navigate('/verification');
+
+    } catch (err) {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="signin-page">
       <div className="signin-card">
         <h2 className="card-title">Sign in to TruthLens</h2>
 
-        <form className="signin-form">
+        {error && <div className="form-message form-error">{error}</div>}
+
+        <form className="signin-form" onSubmit={handleSubmit}>
           <div className="input-group">
             <label htmlFor="email" className="input-label">Email</label>
             <input
@@ -17,6 +82,8 @@ const TruthLensSignIn = () => {
               className="text-input"
               placeholder="Enter your email"
               required
+              value={formData.email}
+              onChange={handleChange}
             />
           </div>
 
@@ -29,6 +96,8 @@ const TruthLensSignIn = () => {
               className="text-input"
               placeholder="Enter your password"
               required
+              value={formData.password}
+              onChange={handleChange}
             />
           </div>
 
@@ -36,7 +105,9 @@ const TruthLensSignIn = () => {
             <a href="#" className="forgot-password-link">Forgot password?</a>
           </div>
 
-          <button type="submit" className="primary-btn">Sign In</button>
+          <button type="submit" className="primary-btn" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
         </form>
 
         <div className="divider">

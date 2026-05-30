@@ -35,6 +35,26 @@ body {
   margin: 0 0 28px 0;
 }
 
+/* Form Messages */
+.form-message {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.form-error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .signin-form {
   display: flex;
   flex-direction: column;

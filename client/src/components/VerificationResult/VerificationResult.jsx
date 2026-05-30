@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import './VerificationPage.css';
+import './VerificationResult.css';
 
 const getStatus = (verdict) => {
     switch (verdict) {
