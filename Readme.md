@@ -12,6 +12,10 @@
 [![Express](https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-TruthLens-0052CC?style=for-the-badge&logo=render&logoColor=white)](https://codorra-client.onrender.com)
+
+🔗 **[View Live Demo →](https://codorra-client.onrender.com)**
+
 </div>
 
 ---
