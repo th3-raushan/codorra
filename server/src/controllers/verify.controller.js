@@ -1,5 +1,6 @@
 const claimExtractionService = require('./../services/claimExtraction.service');
 const { verifyExtractedClaims } = require('./../services/claimVerification.service');
+const Verification = require('../models/verification');
 
 const MAX_CONTENT_LENGTH = 50000; // ~10,000 words
 
@@ -51,14 +52,40 @@ const verifyContent = async (req, res) => {
         console.log(`Verifying ${claims.length} claims...`);
         const verificationResult = await verifyExtractedClaims(claims);
 
-        return res.status(200).json({
+        const responseData = {
             success: true,
             timestamp: new Date().toISOString(),
             data: {
                 extractedClaims: claims,
                 verification: verificationResult
             }
-        });
+        };
+
+        // Save to database if user is authenticated
+        if (req.user) {
+            try {
+                const title = content.trim().substring(0, 80) +
+                    (content.trim().length > 80 ? '...' : '');
+                const trustScore = verificationResult?.summary?.overallTrustScore || 0;
+                const claimsCount = verificationResult?.results?.length || 0;
+
+                await Verification.create({
+                    userId: req.user._id,
+                    title,
+                    originalContent: content.trim(),
+                    trustScore,
+                    claimsCount,
+                    apiResponse: responseData
+                });
+
+                console.log('Verification saved to history.');
+            } catch (saveErr) {
+                console.error('Failed to save verification to history:', saveErr.message);
+                // Don't fail the response if save fails
+            }
+        }
+
+        return res.status(200).json(responseData);
     }
     catch (err) {
         console.error('Verification controller error:', err);

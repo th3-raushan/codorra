@@ -35,7 +35,7 @@ const getScoreColor = (score) => {
     return '#DE350B';
 };
 
-const getConfidencePercent = (confidence) => Math.round(confidence * 100) + '%';
+const getConfidencePercent = (confidence) => Math.round((confidence || 0) * 100) + '%';
 
 const normalize = (text) =>
     text.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
@@ -67,6 +67,7 @@ const sentenceMatchesClaim = (sentence, claim) => {
 };
 
 const buildHighlightedContent = (text, results, onClaimClick) => {
+    if (!text) return null;
     const lines = text.split('\n');
 
     return lines.map((line, lineIdx) => {
@@ -121,7 +122,42 @@ export default function VerificationPage() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    if (!location.state?.apiData || !location.state?.originalContent) {
+    // ── Safely extract all data with fallbacks ──────────────────────
+    const apiData = location.state?.apiData || null;
+    const originalContent = location.state?.originalContent || '';
+    const data = apiData?.data || null;
+    const verification = data?.verification || null;
+    const summary = verification?.summary || {};
+    const results = verification?.results || [];
+
+    // ── All hooks MUST be called before any early return ─────────────
+    const [selectedClaimIdx, setSelectedClaimIdx] = useState(0);
+
+    const verdictCounts = useMemo(() => {
+        let verified = 0, uncertain = 0, hallucinated = 0;
+        results.forEach(r => {
+            if (r.verdict === 'TRUE') verified++;
+            else if (r.verdict === 'PARTIALLY_TRUE') uncertain++;
+            else if (r.verdict === 'FALSE') hallucinated++;
+        });
+        return { verified, uncertain, hallucinated };
+    }, [results]);
+
+    const score = summary.overallTrustScore || 0;
+    const scoreColor = getScoreColor(score);
+    const radius = 40;
+    const circumference = 2 * Math.PI * radius;
+    const dashArray = (score / 100) * circumference;
+
+    const selectedResult = results[selectedClaimIdx] || null;
+
+    const highlightedContent = useMemo(
+        () => buildHighlightedContent(originalContent, results, setSelectedClaimIdx),
+        [originalContent, results]
+    );
+
+    // ── Guard: no data at all ───────────────────────────────────────
+    if (!apiData || !originalContent) {
         return (
             <div className="verification-page" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -144,36 +180,29 @@ export default function VerificationPage() {
         );
     }
 
-    const { data } = location.state.apiData;
-    const { verification } = data;
-    const { summary, results } = verification;
-    const originalContent = location.state.originalContent;
-
-    const [selectedClaimIdx, setSelectedClaimIdx] = useState(0);
-
-    const verdictCounts = useMemo(() => {
-        let verified = 0, uncertain = 0, hallucinated = 0;
-        results.forEach(r => {
-            if (r.verdict === 'TRUE') verified++;
-            else if (r.verdict === 'PARTIALLY_TRUE') uncertain++;
-            else if (r.verdict === 'FALSE') hallucinated++;
-        });
-        return { verified, uncertain, hallucinated };
-    }, [results]);
-
-    const score = summary.overallTrustScore;
-    const scoreColor = getScoreColor(score);
-    const radius = 40;
-    const circumference = 2 * Math.PI * radius;
-    const dashArray = (score / 100) * circumference;
-    const dashOffset = circumference - dashArray;
-
-    const selectedResult = results[selectedClaimIdx];
-
-    const highlightedContent = useMemo(
-        () => buildHighlightedContent(originalContent, results, setSelectedClaimIdx),
-        [results]
-    );
+    // ── Guard: data exists but verification is missing / empty ──────
+    if (!verification || results.length === 0) {
+        return (
+            <div className="verification-page" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexDirection: 'column', gap: '16px', fontFamily: "'Inter', sans-serif"
+            }}>
+                <p style={{ color: '#5E6C84', fontSize: '16px' }}>
+                    {apiData?.message || 'No verifiable claims were found in the content. Please try different content.'}
+                </p>
+                <button
+                    onClick={() => navigate('/')}
+                    style={{
+                        padding: '12px 32px', backgroundColor: '#565E69', color: '#fff',
+                        border: 'none', borderRadius: '24px', cursor: 'pointer',
+                        fontSize: '15px', fontWeight: 500
+                    }}
+                >
+                    Go Back
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="verification-page">
@@ -197,7 +226,7 @@ export default function VerificationPage() {
                     <div className="trust-score-details">
                         <span className="trust-score-badge">Trust Score</span>
                         <p className="trust-description">
-                            {summary.credibilityComment}
+                            {summary.credibilityComment || 'No credibility summary available.'}
                         </p>
                         <div className="verdict-summary">
                             <div className="verdict-summary-item">
@@ -248,8 +277,8 @@ export default function VerificationPage() {
                                 const isSelected = index === selectedClaimIdx;
                                 return (
                                     <div
-                                        key={result.claimId}
-                                        className={`claim-item verdict-${result.verdict.toLowerCase()} ${isSelected ? 'selected' : ''}`}
+                                        key={result.claimId || index}
+                                        className={`claim-item verdict-${(result.verdict || '').toLowerCase()} ${isSelected ? 'selected' : ''}`}
                                         onClick={() => setSelectedClaimIdx(index)}
                                     >
                                         <div className="claim-header">
@@ -280,39 +309,50 @@ export default function VerificationPage() {
 
                     <section className="card explanation-card">
                         <h3 className="card-heading">Detailed Explanation &amp; Evidence</h3>
-                        <div className="explanation-body">
-                            <p className="explanation-claim-label">
-                                Explanation for Claim {selectedClaimIdx + 1}:
-                            </p>
-                            <p className="explanation-text">
-                                {selectedResult.explanation}
-                            </p>
-                            <div className="evidence-status">
-                                <span className="evidence-status-label">Evidence Status: </span>
-                                <span className={`evidence-status-value ${selectedResult.confidence >= 0.9 ? 'strong' :
-                                    selectedResult.confidence >= 0.7 ? 'moderate' : 'weak'
-                                    }`}>
-                                    {selectedResult.confidence >= 0.9 ? 'Strong' :
-                                        selectedResult.confidence >= 0.7 ? 'Moderate' : 'Weak'}
-                                </span>
+                        {selectedResult ? (
+                            <div className="explanation-body">
+                                <p className="explanation-claim-label">
+                                    Explanation for Claim {selectedClaimIdx + 1}:
+                                </p>
+                                <p className="explanation-text">
+                                    {selectedResult.explanation || 'No explanation available.'}
+                                </p>
+                                <div className="evidence-status">
+                                    <span className="evidence-status-label">Evidence Status: </span>
+                                    <span className={`evidence-status-value ${(selectedResult.confidence || 0) >= 0.9 ? 'strong' :
+                                        (selectedResult.confidence || 0) >= 0.7 ? 'moderate' : 'weak'
+                                        }`}>
+                                        {(selectedResult.confidence || 0) >= 0.9 ? 'Strong' :
+                                            (selectedResult.confidence || 0) >= 0.7 ? 'Moderate' : 'Weak'}
+                                    </span>
+                                </div>
+                                <div className="sources-section">
+                                    <h4 className="sources-heading">Sources:</h4>
+                                    {selectedResult.sources?.length > 0 ? (
+                                        selectedResult.sources.map((source, sIdx) => (
+                                            <div key={sIdx} className="source-item">
+                                                <p className="source-title">
+                                                    <a href={source.url} target="_blank" rel="noopener noreferrer">
+                                                        {source.title}
+                                                    </a>
+                                                </p>
+                                                <p className="source-snippet">{source.snippet}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p style={{ color: '#5E6C84', fontSize: '14px' }}>No sources available.</p>
+                                    )}
+                                </div>
                             </div>
-                            <div className="sources-section">
-                                <h4 className="sources-heading">Sources:</h4>
-                                {selectedResult.sources?.map((source, sIdx) => (
-                                    <div key={sIdx} className="source-item">
-                                        <p className="source-title">
-                                            <a href={source.url} target="_blank" rel="noopener noreferrer">
-                                                {source.title}
-                                            </a>
-                                        </p>
-                                        <p className="source-snippet">{source.snippet}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        ) : (
+                            <p style={{ color: '#5E6C84', fontSize: '14px', padding: '16px' }}>
+                                Select a claim to see its detailed explanation.
+                            </p>
+                        )}
                     </section>
                 </div>
             </main>
         </div>
     );
 }
+

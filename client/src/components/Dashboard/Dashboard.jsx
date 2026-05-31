@@ -154,7 +154,8 @@ export default function TruthLensDashboard() {
     const fetchHistory = async () => {
         try {
             const res = await fetch('/api/history', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                cache: 'no-store'
             });
             const data = await res.json();
             if (data.success) {

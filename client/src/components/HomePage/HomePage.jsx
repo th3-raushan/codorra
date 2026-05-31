@@ -43,6 +43,12 @@ const HomePage = () => {
                 throw new Error(data.error || 'Verification failed. Please try again.');
             }
 
+            // Guard: server returned success but no verifiable claims
+            if (!data.data?.verification || !data.data.verification.results?.length) {
+                setError(data.message || 'No verifiable claims were found in the content. Please try different content.');
+                return;
+            }
+
             navigate('/results', {
                 state: {
                     apiData: data,

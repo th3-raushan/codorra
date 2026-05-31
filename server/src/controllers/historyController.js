@@ -10,6 +10,13 @@ exports.getHistory = async (req, res, next) => {
             .sort({ createdAt: -1 })
             .lean();
 
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Surrogate-Control': 'no-store'
+        });
+
         res.status(200).json({
             success: true,
             count: verifications.length,
