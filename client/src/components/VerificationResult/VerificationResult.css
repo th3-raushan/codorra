@@ -38,11 +38,10 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--color-app-bg);
   color: var(--color-text-primary);
-  overflow: hidden;
 }
 
 .verification-page {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -52,8 +51,8 @@ body {
 
 .main-content {
   flex: 1;
-  overflow: hidden;
-  max-width: 100;
+  overflow-y: auto;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   padding: 24px 32px;
