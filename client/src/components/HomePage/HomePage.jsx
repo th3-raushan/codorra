@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../../config/api';
 import './HomePage.css';
 import logoIcon from '../../assets/truthlens-logo.png';
 
@@ -20,7 +21,7 @@ const HomePage = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/verify', {
+            const response = await fetch(`${API_BASE_URL}/api/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
                 body: trimmed,

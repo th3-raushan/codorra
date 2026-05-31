@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../../config/api';
 import './Dashboard.css';
 import '../VerificationResult/VerificationResult.css';
 import logoIcon from "./../../assets/truthlens-logo.png"
@@ -153,7 +154,7 @@ export default function TruthLensDashboard() {
     // ─── Fetch history on mount ─────────────────────────────────────
     const fetchHistory = async () => {
         try {
-            const res = await fetch('/api/history', {
+            const res = await fetch(`${API_BASE_URL}/api/history`, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 cache: 'no-store'
             });
@@ -184,7 +185,7 @@ export default function TruthLensDashboard() {
         setIsVerifying(true);
 
         try {
-            const response = await fetch('/api/verify', {
+            const response = await fetch(`${API_BASE_URL}/api/verify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain',
@@ -231,7 +232,7 @@ export default function TruthLensDashboard() {
             setActiveHistoryId(id);
             setVerifyError('');
 
-            const res = await fetch(`/api/history/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/history/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
