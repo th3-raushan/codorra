@@ -56,7 +56,7 @@ const TruthLensSignIn = () => {
       }));
 
       // Redirect to the main app page
-      navigate('/verification');
+      navigate('/dashboard');
 
     } catch (err) {
       setError('Network error. Please check your connection and try again.');

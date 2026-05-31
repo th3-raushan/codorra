@@ -4,6 +4,7 @@ import VerificationResult from './components/VerificationResult/VerificationResu
 import LandingPage from './components/LandingPage/LandingPage';
 import SignUp from './components/SignUp/SignUp';
 import SignIn from './components/SignIn/SignIn';
+import Dashboard from './components/Dashboard/Dashboard';
 
 const App = () => (
     <div className="app">
@@ -13,6 +14,7 @@ const App = () => (
         <Route path="/results" element={<VerificationResult />} />
         <Route path='/signin' element={<SignIn/>} />
         <Route path='/signup' element={<SignUp/>} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </div>
 );
