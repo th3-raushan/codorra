@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://codorra-server.onrender.com',
+        target: ' https://codorra-frontend.onrender.com',
         changeOrigin: true,
         timeout: 300000,
       },
