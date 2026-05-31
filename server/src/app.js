@@ -9,7 +9,12 @@ const errorHandler= require('./middleware/errorHandler');
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://codorra-client.onrender.com",
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.text());
 app.use(morgan('dev'));
